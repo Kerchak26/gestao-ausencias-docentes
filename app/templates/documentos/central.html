@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block titulo %}Atestados e reposições{% endblock %}
+{% block conteudo %}
+<h1>Atestados e reposições</h1>
+
+<section class="cartao">
+  <h2>Documentos aguardando conferência ({{ pendentes|length }})</h2>
+  {% for d in pendentes %}
+    <div class="item">
+      <a href="{{ url_for('documentos.baixar_anexo', id=d.id) }}">{{ d.nome_original }}</a> · {{ TIPOS_ANEXO[d.tipo] }}
+      · {{ d.ausencia.professor.nome }} · ausência de {{ d.ausencia.data|data_br }}
+      (<a href="{{ url_for('ausencias.detalhe', id=d.ausencia_id) }}">ver</a>)
+      <form method="post" action="{{ url_for('documentos.avaliar_anexo', id=d.id) }}" class="inline">
+        <button name="status" value="aprovado">Aprovar</button>
+        <button name="status" value="recusado">Recusar</button>
+      </form>
+    </div>
+  {% else %}<p class="muted">Nenhum documento pendente.</p>{% endfor %}
+</section>
+
+<section class="cartao">
+  <h2>Reposições agendadas ({{ reposicoes|length }})</h2>
+  <div class="tabela-wrap"><table>
+    <thead><tr><th>Data</th><th>Horário</th><th>Professor</th><th>Turma</th><th>Local</th><th>Ação</th></tr></thead>
+    <tbody>
+    {% for r in reposicoes %}
+      <tr>
+        <td data-rotulo="Data">{{ r.data|data_br }}</td>
+        <td data-rotulo="Horário">{{ r.horario_inicio|hora }}–{{ r.horario_fim|hora }}</td>
+        <td data-rotulo="Professor">{{ r.ausencia.professor.nome }}</td>
+        <td data-rotulo="Turma">{{ r.ausencia.turma.nome }}</td>
+        <td data-rotulo="Local">{{ r.local or '—' }}</td>
+        <td>
+          <form method="post" action="{{ url_for('documentos.status_reposicao', id=r.id) }}" class="inline">
+            <button name="status" value="realizada">Realizada</button>
+            <button name="status" value="cancelada">Cancelar</button>
+          </form>
+        </td>
+      </tr>
+    {% else %}<tr><td colspan="6" class="muted">Nenhuma reposição agendada.</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</section>
+{% endblock %}

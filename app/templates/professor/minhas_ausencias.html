@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import selo with context %}
+{% block titulo %}Minhas ausências{% endblock %}
+{% block conteudo %}
+<h1>Minhas ausências</h1>
+<p class="muted">Envie atestados, agende reposições e envie comprovantes tocando em uma ausência.</p>
+{% for a in ausencias %}
+  <a class="cartao item-link" href="{{ url_for('ausencias.detalhe', id=a.id) }}">
+    <strong>{{ a.data|data_br }} · {{ a.horario_inicio|hora }}–{{ a.horario_fim|hora }}</strong>
+    <span>{{ a.disciplina.nome }} · {{ a.turma.nome }}</span>
+    <span>{{ selo(a) }} {% if a.anexos %}<span class="muted">{{ a.anexos|length }} documento(s)</span>{% else %}<span class="selo selo-vaga">sem documento</span>{% endif %}</span>
+  </a>
+{% else %}
+  <p class="cartao muted">Nenhuma ausência registrada.</p>
+{% endfor %}
+{% endblock %}

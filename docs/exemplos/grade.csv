@@ -1,0 +1,4 @@
+professor;email;disciplina_codigo;disciplina_nome;turma;curso;turno;dia_semana;inicio;fim
+Ana Souza;ana@impacta.edu.br;ADS101;Algoritmos e Lógica;ADS-1A;Análise e Desenvolvimento de Sistemas;Noite;0;19:00;20:40
+Bruno Lima;bruno@impacta.edu.br;ADS102;Banco de Dados;ADS-1A;Análise e Desenvolvimento de Sistemas;Noite;0;20:50;22:30
+Carla Mendes;carla@impacta.edu.br;ADS103;Engenharia de Software;ADS-2A;Análise e Desenvolvimento de Sistemas;Noite;1;19:00;20:40

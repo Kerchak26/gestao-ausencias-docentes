@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block titulo %}Cadastros{% endblock %}
+{% block conteudo %}
+<h1>Cadastros</h1>
+
+<section class="cartao">
+  <h2>Importar grade horária (CSV do sistema acadêmico)</h2>
+  <p class="muted">Colunas: professor; email; disciplina_codigo; disciplina_nome; turma; curso; turno; dia_semana (0=segunda); inicio; fim. Veja <code>docs/exemplos/grade.csv</code>.</p>
+  <form method="post" action="{{ url_for('cadastros.criar', tipo='importar') }}" enctype="multipart/form-data" class="inline">
+    <input type="file" name="arquivo" accept=".csv" required><button type="submit" class="primario">Importar</button>
+  </form>
+</section>
+
+<div class="grade-2">
+  <section class="cartao">
+    <h2>Professores ({{ professores|length }})</h2>
+    <form method="post" action="{{ url_for('cadastros.criar', tipo='professor') }}" class="form linha">
+      <label>Nome <input name="nome" required></label><label>E-mail <input type="email" name="email"></label>
+      <button type="submit">Adicionar</button>
+    </form>
+    <ul class="lista-simples">
+      {% for p in professores %}<li>{{ p.nome }} <span class="muted">{{ p.email }}</span>
+        <form method="post" action="{{ url_for('cadastros.criar', tipo='professor-status') }}" class="inline">
+          <input type="hidden" name="id" value="{{ p.id }}">
+          <button type="submit">{{ 'Desativar' if p.ativo else 'Reativar' }}</button></form>
+        {% if not p.ativo %}<span class="selo selo-vaga">inativo</span>{% endif %}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="cartao">
+    <h2>Disciplinas ({{ disciplinas|length }})</h2>
+    <form method="post" action="{{ url_for('cadastros.criar', tipo='disciplina') }}" class="form linha">
+      <label>Código <input name="codigo" required></label><label>Nome <input name="nome" required></label>
+      <button type="submit">Adicionar</button>
+    </form>
+    <ul class="lista-simples">{% for d in disciplinas %}<li>{{ d.codigo }} – {{ d.nome }}</li>{% endfor %}</ul>
+  </section>
+
+  <section class="cartao">
+    <h2>Turmas ({{ turmas|length }})</h2>
+    <form method="post" action="{{ url_for('cadastros.criar', tipo='turma') }}" class="form linha">
+      <label>Nome <input name="nome" required></label><label>Curso <input name="curso"></label>
+      <label>Turno <select name="turno"><option>Manhã</option><option>Tarde</option><option selected>Noite</option></select></label>
+      <button type="submit">Adicionar</button>
+    </form>
+    <ul class="lista-simples">{% for t in turmas %}<li>{{ t.nome }} <span class="muted">{{ t.curso }} · {{ t.turno }}</span></li>{% endfor %}</ul>
+  </section>
+
+  <section class="cartao">
+    <h2>Grade horária ({{ grade|length }} aulas)</h2>
+    <form method="post" action="{{ url_for('cadastros.criar', tipo='aula') }}" class="form">
+      <div class="linha">
+        <label>Professor <select name="professor_id" required>{% for p in professores %}<option value="{{ p.id }}">{{ p.nome }}</option>{% endfor %}</select></label>
+        <label>Disciplina <select name="disciplina_id" required>{% for d in disciplinas %}<option value="{{ d.id }}">{{ d.nome }}</option>{% endfor %}</select></label>
+        <label>Turma <select name="turma_id" required>{% for t in turmas %}<option value="{{ t.id }}">{{ t.nome }}</option>{% endfor %}</select></label>
+      </div>
+      <div class="linha">
+        <label>Dia <select name="dia_semana">{% for d in DIAS_SEMANA %}<option value="{{ loop.index0 }}">{{ d }}</option>{% endfor %}</select></label>
+        <label>Início <input type="time" name="horario_inicio" required></label>
+        <label>Fim <input type="time" name="horario_fim" required></label>
+      </div>
+      <button type="submit">Adicionar aula</button>
+    </form>
+    <details><summary>Ver grade</summary>
+      <ul class="lista-simples">{% for a in grade %}<li>{{ DIAS_SEMANA[a.dia_semana] }} {{ a.horario_inicio|hora }}–{{ a.horario_fim|hora }} · {{ a.professor.nome }} · {{ a.disciplina.nome }} · {{ a.turma.nome }}</li>{% endfor %}</ul>
+    </details>
+  </section>
+</div>
+{% endblock %}

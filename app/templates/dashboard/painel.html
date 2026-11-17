@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import selo, filtros with context %}
+{% block titulo %}Dashboard{% endblock %}
+{% macro barras(itens, total) -%}
+  {% set maximo = (itens|map(attribute=1)|max) if itens else 1 %}
+  <ul class="barras">
+  {% for rotulo, qtd in itens[:10] %}
+    <li><span class="rotulo">{{ rotulo }}</span>
+      <span class="barra"><span style="width: {{ (100 * qtd / maximo)|round(1) }}%"></span></span>
+      <span class="valor">{{ qtd }}</span></li>
+  {% else %}<li class="muted">Sem dados.</li>{% endfor %}
+  </ul>
+{%- endmacro %}
+{% block conteudo %}
+<div class="cabecalho">
+  <h1>Dashboard da coordenação</h1>
+  <a class="botao" href="{{ url_for('relatorios.pdf', inicio=f.inicio.isoformat(), fim=f.fim.isoformat(), professor_id=f.professor_id or '', turma_id=f.turma_id or '') }}">Exportar PDF</a>
+</div>
+{{ filtros(f, professores, turmas, url_for('dashboard.painel')) }}
+
+<div class="kpis">
+  <div class="kpi"><span class="kpi-valor">{{ ind.total }}</span><span class="kpi-rotulo">Ausências no período</span></div>
+  <div class="kpi"><span class="kpi-valor">{{ ind.taxa_substituicao }}%</span><span class="kpi-rotulo">Taxa de substituição</span></div>
+  <div class="kpi"><span class="kpi-valor">{{ ind.taxa_cobertura }}%</span><span class="kpi-rotulo">Aulas cobertas (substituição + reposição)</span></div>
+  <div class="kpi alerta-kpi"><span class="kpi-valor">{{ ind.classes.vaga }}</span><span class="kpi-rotulo">Aulas vagas sem cobertura</span></div>
+  <div class="kpi"><span class="kpi-valor">{{ ind.reposicoes_agendadas }} / {{ ind.reposicoes_realizadas }}</span><span class="kpi-rotulo">Reposições agendadas / realizadas</span></div>
+  <div class="kpi"><span class="kpi-valor">{{ ind.taxa_documentacao }}%</span><span class="kpi-rotulo">Ausências com documento</span></div>
+</div>
+
+<div class="grade-2">
+  <section class="cartao"><h2>Faltas por professor</h2>{{ barras(ind.por_professor, ind.total) }}</section>
+  <section class="cartao"><h2>Faltas por turma</h2>{{ barras(ind.por_turma, ind.total) }}</section>
+  <section class="cartao"><h2>Situação das aulas</h2>
+    <ul class="barras">
+      {% set maximo = (ind.classes.values()|max) or 1 %}
+      {% for k, v in CLASSIFICACOES.items() %}
+      <li><span class="rotulo">{{ v }}</span>
+        <span class="barra"><span class="cor-{{ k }}" style="width: {{ (100 * ind.classes[k] / maximo)|round(1) }}%"></span></span>
+        <span class="valor">{{ ind.classes[k] }}</span></li>
+      {% endfor %}
+    </ul>
+  </section>
+  <section class="cartao"><h2>Motivos</h2>{{ barras(ind.por_motivo, ind.total) }}</section>
+</div>
+
+<section class="cartao">
+  <h2>Últimas ausências</h2>
+  <div class="tabela-wrap"><table>
+    <thead><tr><th>Data</th><th>Professor</th><th>Turma</th><th>Situação</th><th></th></tr></thead>
+    <tbody>
+    {% for a in ausencias %}
+      <tr><td data-rotulo="Data">{{ a.data|data_br }}</td><td data-rotulo="Professor">{{ a.professor.nome }}</td>
+        <td data-rotulo="Turma">{{ a.turma.nome }}</td><td data-rotulo="Situação">{{ selo(a) }}</td>
+        <td><a href="{{ url_for('ausencias.detalhe', id=a.id) }}">Abrir</a></td></tr>
+    {% else %}<tr><td colspan="5" class="muted">Sem ausências no período.</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+  <p><a href="{{ url_for('ausencias.lista', inicio=f.inicio.isoformat(), fim=f.fim.isoformat(), professor_id=f.professor_id or '', turma_id=f.turma_id or '') }}">Ver histórico completo →</a></p>
+</section>
+{% endblock %}

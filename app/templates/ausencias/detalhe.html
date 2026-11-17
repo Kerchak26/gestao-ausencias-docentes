@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import selo with context %}
+{% block titulo %}Ausência #{{ a.id }}{% endblock %}
+{% block conteudo %}
+{% set gestao = g.usuario.perfil in ('secretaria', 'coordenador') %}
+<div class="cabecalho">
+  <h1>Ausência #{{ a.id }}</h1>
+  {{ selo(a) }}
+</div>
+
+<section class="cartao">
+  <dl class="dados">
+    <dt>Professor</dt><dd>{{ a.professor.nome }}</dd>
+    <dt>Data</dt><dd>{{ a.data|data_br }} ({{ DIAS_SEMANA[a.data.weekday()] }})</dd>
+    <dt>Horário</dt><dd>{{ a.horario_inicio|hora }}–{{ a.horario_fim|hora }}</dd>
+    <dt>Disciplina</dt><dd>{{ a.disciplina.codigo }} – {{ a.disciplina.nome }}</dd>
+    <dt>Turma</dt><dd>{{ a.turma.nome }}</dd>
+    <dt>Motivo</dt><dd>{{ MOTIVOS.get(a.motivo, a.motivo) }}</dd>
+    <dt>Justificada</dt><dd>{{ 'Sim' if justificada(a) else 'Não' }}</dd>
+    {% if a.observacao %}<dt>Observação</dt><dd>{{ a.observacao }}</dd>{% endif %}
+    <dt>Registrada por</dt><dd>{{ a.registrado_por.nome if a.registrado_por else '—' }} em {{ a.criado_em|data_br }}</dd>
+  </dl>
+</section>
+
+<div class="grade-2">
+  <section class="cartao">
+    <h2>Substituição</h2>
+    {% if a.substituicao %}
+      <p>Substituto: <strong>{{ a.substituicao.substituto.nome }}</strong></p>
+      {% if a.substituicao.observacao %}<p class="muted">{{ a.substituicao.observacao }}</p>{% endif %}
+      {% if gestao %}
+      <form method="post" action="{{ url_for('substituicoes.remover', ausencia_id=a.id) }}">
+        <input type="hidden" name="voltar" value="detalhe"><button type="submit">Remover substituição</button>
+      </form>{% endif %}
+    {% elif gestao %}
+      {% if sugestoes %}
+      <form method="post" action="{{ url_for('substituicoes.atribuir', ausencia_id=a.id) }}" class="form">
+        <input type="hidden" name="voltar" value="detalhe">
+        <label>Professores disponíveis no horário
+          <select name="substituto_id" required>
+            {% for p in sugestoes %}<option value="{{ p.id }}">{{ p.nome }}</option>{% endfor %}
+          </select></label>
+        <label>Observação <input name="observacao" maxlength="300"></label>
+        <button type="submit" class="primario">Atribuir substituto</button>
+      </form>
+      {% else %}<p class="muted">Nenhum professor disponível neste horário. Agende uma reposição.</p>{% endif %}
+    {% else %}<p class="muted">Sem substituto.</p>{% endif %}
+  </section>
+
+  <section class="cartao">
+    <h2>Reposições</h2>
+    {% for r in a.reposicoes %}
+      <div class="item">
+        <strong>{{ r.data|data_br }} {{ r.horario_inicio|hora }}–{{ r.horario_fim|hora }}</strong>
+        {% if r.local %}· {{ r.local }}{% endif %} · <span class="selo selo-rep-{{ r.status }}">{{ r.status }}</span>
+        {% if gestao and r.status == 'agendada' %}
+        <form method="post" action="{{ url_for('documentos.status_reposicao', id=r.id) }}" class="inline">
+          <button name="status" value="realizada">Marcar realizada</button>
+          <button name="status" value="cancelada">Cancelar</button>
+        </form>{% endif %}
+      </div>
+    {% else %}<p class="muted">Nenhuma reposição agendada.</p>{% endfor %}
+    <details>
+      <summary>Agendar reposição</summary>
+      <form method="post" action="{{ url_for('documentos.agendar_reposicao', id=a.id) }}" class="form">
+        <label>Data <input type="date" name="data" required></label>
+        <div class="linha">
+          <label>Início <input type="time" name="horario_inicio" required></label>
+          <label>Fim <input type="time" name="horario_fim" required></label>
+        </div>
+        <label>Local <input name="local" maxlength="60"></label>
+        <button type="submit" class="primario">Agendar</button>
+      </form>
+    </details>
+  </section>
+</div>
+
+<section class="cartao">
+  <h2>Atestados e comprovações</h2>
+  {% for d in a.anexos %}
+    <div class="item">
+      <a href="{{ url_for('documentos.baixar_anexo', id=d.id) }}">{{ d.nome_original }}</a>
+      · {{ TIPOS_ANEXO[d.tipo] }}{% if d.reposicao %} ({{ d.reposicao.data|data_br }}){% endif %}
+      · <span class="selo selo-doc-{{ d.status }}">{{ d.status }}</span>
+      <span class="muted">enviado por {{ d.enviado_por.nome if d.enviado_por else '—' }} em {{ d.criado_em|data_br }}</span>
+      {% if gestao and d.status == 'pendente' %}
+      <form method="post" action="{{ url_for('documentos.avaliar_anexo', id=d.id) }}" class="inline">
+        <button name="status" value="aprovado">Aprovar</button>
+        <button name="status" value="recusado">Recusar</button>
+      </form>{% endif %}
+    </div>
+  {% else %}<p class="muted">Nenhum documento enviado.</p>{% endfor %}
+  <form method="post" action="{{ url_for('documentos.enviar_anexo', id=a.id) }}" enctype="multipart/form-data" class="form">
+    <div class="linha">
+      <label>Tipo
+        <select name="tipo">{% for k, v in TIPOS_ANEXO.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></label>
+      <label>Reposição (para comprovante)
+        <select name="reposicao_id"><option value="">—</option>
+          {% for r in a.reposicoes %}<option value="{{ r.id }}">{{ r.data|data_br }} {{ r.horario_inicio|hora }}</option>{% endfor %}
+        </select></label>
+    </div>
+    <label>Arquivo (PDF, PNG ou JPG, até 5 MB) <input type="file" name="arquivo" accept=".pdf,.png,.jpg,.jpeg" required></label>
+    <button type="submit" class="primario">Enviar documento</button>
+  </form>
+</section>
+
+<section class="cartao">
+  <h2>Histórico de ações</h2>
+  <ul class="linha-tempo">
+    {% for h in historico %}<li><span class="muted">{{ h.criado_em|data_br }}</span> {{ h.acao }}{% if h.usuario %} — {{ h.usuario.nome }}{% endif %}</li>
+    {% else %}<li class="muted">Sem registros.</li>{% endfor %}
+  </ul>
+  {% if gestao %}
+  <form method="post" action="{{ url_for('ausencias.excluir', id=a.id) }}" onsubmit="return confirm('Excluir este lançamento?');">
+    <button type="submit" class="perigo">Excluir lançamento</button>
+  </form>{% endif %}
+</section>
+{% endblock %}

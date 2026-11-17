@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import filtros with context %}
+{% block titulo %}Relatórios{% endblock %}
+{% block conteudo %}
+<h1>Relatórios em PDF</h1>
+<section class="cartao">
+  <p>Gere o histórico de ausências, substituições e reposições para reuniões com professores.
+     Para o relatório individual de um professor, selecione-o no filtro.</p>
+  {{ filtros(f, professores, turmas, url_for('relatorios.pdf')) }}
+  <p class="muted">O PDF abre em uma nova aba e pode ser salvo ou impresso.</p>
+</section>
+{% endblock %}

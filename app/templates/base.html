@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Gestão de Ausências{% endblock %} · Gestão de Ausências Docentes</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+{% if g.usuario %}
+<header class="topo">
+  <a class="marca" href="{{ url_for('auth.inicio') }}">Ausências Docentes</a>
+  <input type="checkbox" id="menu-toggle" class="menu-toggle" aria-label="Abrir menu">
+  <label for="menu-toggle" class="menu-botao" aria-hidden="true">☰</label>
+  <nav class="menu">
+    {% if g.usuario.perfil in ('secretaria', 'coordenador') %}
+      <a href="{{ url_for('ausencias.lancamento') }}">Lançamento</a>
+      <a href="{{ url_for('substituicoes.painel') }}">Substituições</a>
+      <a href="{{ url_for('documentos.central') }}">Atestados e reposições</a>
+      <a href="{{ url_for('ausencias.lista') }}">Histórico</a>
+      <a href="{{ url_for('dashboard.painel') }}">Dashboard</a>
+      <a href="{{ url_for('relatorios.formulario') }}">Relatórios</a>
+      <a href="{{ url_for('cadastros.index') }}">Cadastros</a>
+    {% else %}
+      <a href="{{ url_for('documentos.minhas_ausencias') }}">Minhas ausências</a>
+    {% endif %}
+    <span class="usuario">{{ g.usuario.nome }} ({{ g.usuario.perfil }})</span>
+    <a href="{{ url_for('auth.logout') }}">Sair</a>
+  </nav>
+</header>
+{% endif %}
+<main class="conteudo">
+  {% with mensagens = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in mensagens %}<div class="alerta alerta-{{ cat }}" role="status">{{ msg }}</div>{% endfor %}
+  {% endwith %}
+  {% block conteudo %}{% endblock %}
+</main>
+</body>
+</html>

@@ -1,0 +1,21 @@
+{% macro selo(a) -%}
+  {% set c = classificar(a) %}
+  <span class="selo selo-{{ c }}">{{ CLASSIFICACOES[c] }}</span>
+{%- endmacro %}
+
+{% macro filtros(f, professores, turmas, acao, extra='') -%}
+<form method="get" action="{{ acao }}" class="filtros">
+  <label>De <input type="date" name="inicio" value="{{ f.inicio.isoformat() if f.inicio else '' }}"></label>
+  <label>Até <input type="date" name="fim" value="{{ f.fim.isoformat() if f.fim else '' }}"></label>
+  <label>Professor
+    <select name="professor_id"><option value="">Todos</option>
+      {% for p in professores %}<option value="{{ p.id }}" {{ 'selected' if f.professor_id == p.id }}>{{ p.nome }}</option>{% endfor %}
+    </select></label>
+  <label>Turma
+    <select name="turma_id"><option value="">Todas</option>
+      {% for t in turmas %}<option value="{{ t.id }}" {{ 'selected' if f.turma_id == t.id }}>{{ t.nome }}</option>{% endfor %}
+    </select></label>
+  {{ extra }}
+  <button type="submit">Filtrar</button>
+</form>
+{%- endmacro %}

@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block titulo %}Entrar{% endblock %}
+{% block conteudo %}
+<section class="cartao login">
+  <h1>Gestão de Ausências Docentes</h1>
+  <p class="muted">Secretaria de Coordenação</p>
+  <form method="post" class="form">
+    <label>E-mail <input type="email" name="email" required autofocus autocomplete="username"></label>
+    <label>Senha <input type="password" name="senha" required autocomplete="current-password"></label>
+    <button type="submit" class="primario">Entrar</button>
+  </form>
+</section>
+{% endblock %}

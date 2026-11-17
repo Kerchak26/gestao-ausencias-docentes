@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import selo, filtros with context %}
+{% block titulo %}Histórico{% endblock %}
+{% block conteudo %}
+<h1>Histórico de ausências</h1>
+{% set extra %}
+  <label>Situação
+    <select name="classificacao"><option value="">Todas</option>
+      {% for k, v in CLASSIFICACOES.items() %}<option value="{{ k }}" {{ 'selected' if f.classificacao == k }}>{{ v }}</option>{% endfor %}
+    </select></label>
+{% endset %}
+{{ filtros(f, professores, turmas, url_for('ausencias.lista'), extra) }}
+<p class="muted">{{ ausencias|length }} registro(s)</p>
+<div class="tabela-wrap"><table>
+  <thead><tr><th>Data</th><th>Horário</th><th>Professor</th><th>Disciplina</th><th>Turma</th><th>Motivo</th><th>Situação</th><th>Docs</th><th></th></tr></thead>
+  <tbody>
+  {% for a in ausencias %}
+    <tr>
+      <td data-rotulo="Data">{{ a.data|data_br }}</td>
+      <td data-rotulo="Horário">{{ a.horario_inicio|hora }}–{{ a.horario_fim|hora }}</td>
+      <td data-rotulo="Professor">{{ a.professor.nome }}</td>
+      <td data-rotulo="Disciplina">{{ a.disciplina.nome }}</td>
+      <td data-rotulo="Turma">{{ a.turma.nome }}</td>
+      <td data-rotulo="Motivo">{{ MOTIVOS.get(a.motivo, a.motivo) }}</td>
+      <td data-rotulo="Situação">{{ selo(a) }}</td>
+      <td data-rotulo="Docs">{{ a.anexos|length }}{% if justificada(a) %} ✔{% endif %}</td>
+      <td><a href="{{ url_for('ausencias.detalhe', id=a.id) }}">Abrir</a></td>
+    </tr>
+  {% else %}
+    <tr><td colspan="9" class="muted">Nenhum registro encontrado.</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import selo with context %}
+{% block titulo %}Lançamento diário{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <h1>Lançamento diário de ausências</h1>
+  <form method="get" class="inline">
+    <input type="date" name="data" value="{{ dia.isoformat() }}" aria-label="Data">
+    <button type="submit">Ir</button>
+  </form>
+</div>
+<p class="muted">{{ DIAS_SEMANA[dia.weekday()] }}, {{ dia|data_br }}</p>
+
+<div class="grade-2">
+  <section class="cartao">
+    <h2>Grade do dia</h2>
+    <form method="get" class="inline">
+      <input type="hidden" name="data" value="{{ dia.isoformat() }}">
+      <select name="professor_id" onchange="this.form.submit()" aria-label="Filtrar por professor">
+        <option value="">Todos os professores</option>
+        {% for p in professores %}<option value="{{ p.id }}" {{ 'selected' if professor_sel == p.id }}>{{ p.nome }}</option>{% endfor %}
+      </select>
+    </form>
+    {% if grade %}
+    <form method="post">
+      <input type="hidden" name="data" value="{{ dia.isoformat() }}">
+      <ul class="lista-check">
+        {% for aula in grade %}
+        <li><label>
+          <input type="checkbox" name="aula_ids" value="{{ aula.id }}">
+          <strong>{{ aula.horario_inicio|hora }}–{{ aula.horario_fim|hora }}</strong>
+          {{ aula.professor.nome }} · {{ aula.disciplina.nome }} · {{ aula.turma.nome }}
+        </label></li>
+        {% endfor %}
+      </ul>
+      <div class="form linha">
+        <label>Motivo
+          <select name="motivo">{% for k, v in MOTIVOS.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select>
+        </label>
+        <label>Observação <input name="observacao" maxlength="500"></label>
+      </div>
+      <button type="submit" class="primario">Registrar faltas selecionadas</button>
+    </form>
+    {% else %}
+      <p class="muted">Não há aulas na grade para este dia.</p>
+    {% endif %}
+  </section>
+
+  <section class="cartao">
+    <h2>Lançamento manual</h2>
+    <form method="post" class="form">
+      <input type="hidden" name="data" value="{{ dia.isoformat() }}">
+      <label>Professor
+        <select name="professor_id" required><option value="">Selecione</option>
+          {% for p in professores %}<option value="{{ p.id }}">{{ p.nome }}</option>{% endfor %}</select></label>
+      <label>Disciplina
+        <select name="disciplina_id" required><option value="">Selecione</option>
+          {% for d in disciplinas %}<option value="{{ d.id }}">{{ d.codigo }} – {{ d.nome }}</option>{% endfor %}</select></label>
+      <label>Turma
+        <select name="turma_id" required><option value="">Selecione</option>
+          {% for t in turmas %}<option value="{{ t.id }}">{{ t.nome }}</option>{% endfor %}</select></label>
+      <div class="linha">
+        <label>Início <input type="time" name="horario_inicio" required></label>
+        <label>Fim <input type="time" name="horario_fim" required></label>
+      </div>
+      <label>Motivo
+        <select name="motivo">{% for k, v in MOTIVOS.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></label>
+      <label>Observação <textarea name="observacao" rows="2" maxlength="500"></textarea></label>
+      <button type="submit" class="primario">Registrar ausência</button>
+    </form>
+  </section>
+</div>
+
+<section class="cartao">
+  <h2>Ausências registradas no dia ({{ ausencias_do_dia|length }})</h2>
+  {% if ausencias_do_dia %}
+  <div class="tabela-wrap"><table>
+    <thead><tr><th>Horário</th><th>Professor</th><th>Disciplina</th><th>Turma</th><th>Situação</th><th></th></tr></thead>
+    <tbody>
+    {% for a in ausencias_do_dia|sort(attribute='horario_inicio') %}
+      <tr>
+        <td data-rotulo="Horário">{{ a.horario_inicio|hora }}–{{ a.horario_fim|hora }}</td>
+        <td data-rotulo="Professor">{{ a.professor.nome }}</td>
+        <td data-rotulo="Disciplina">{{ a.disciplina.nome }}</td>
+        <td data-rotulo="Turma">{{ a.turma.nome }}</td>
+        <td data-rotulo="Situação">{{ selo(a) }}</td>
+        <td><a href="{{ url_for('ausencias.detalhe', id=a.id) }}">Abrir</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  <p><a class="botao" href="{{ url_for('substituicoes.painel', data=dia.isoformat()) }}">Alocar substitutos para este dia →</a></p>
+  {% else %}<p class="muted">Nenhuma ausência registrada.</p>{% endif %}
+</section>
+{% endblock %}

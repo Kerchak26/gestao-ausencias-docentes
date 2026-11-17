@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import selo with context %}
+{% block titulo %}Substituições{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <h1>Substituições do dia</h1>
+  <form method="get" class="inline">
+    <input type="date" name="data" value="{{ dia.isoformat() }}" aria-label="Data"><button type="submit">Ir</button>
+  </form>
+</div>
+<p class="muted">{{ DIAS_SEMANA[dia.weekday()] }}, {{ dia|data_br }} · {{ ausencias|length }} aula(s) afetada(s)</p>
+
+{% for a in ausencias %}
+<section class="cartao aula">
+  <div class="cabecalho">
+    <h2>{{ a.horario_inicio|hora }}–{{ a.horario_fim|hora }} · {{ a.turma.nome }}</h2>
+    {{ selo(a) }}
+  </div>
+  <p>{{ a.disciplina.nome }} — ausente: <strong>{{ a.professor.nome }}</strong></p>
+  {% if a.substituicao %}
+    <p>Substituto: <strong>{{ a.substituicao.substituto.nome }}</strong></p>
+    <form method="post" action="{{ url_for('substituicoes.remover', ausencia_id=a.id) }}" class="inline">
+      <button type="submit">Remover</button></form>
+  {% elif sugestoes[a.id] %}
+    <form method="post" action="{{ url_for('substituicoes.atribuir', ausencia_id=a.id) }}" class="inline">
+      <select name="substituto_id" aria-label="Substituto">
+        {% for p in sugestoes[a.id] %}<option value="{{ p.id }}">{{ p.nome }}</option>{% endfor %}
+      </select>
+      <button type="submit" class="primario">Atribuir</button>
+    </form>
+  {% else %}
+    <p class="muted">Nenhum professor disponível. <a href="{{ url_for('ausencias.detalhe', id=a.id) }}">Agendar reposição</a></p>
+  {% endif %}
+  <p><a href="{{ url_for('ausencias.detalhe', id=a.id) }}">Detalhes</a></p>
+</section>
+{% else %}
+<p class="cartao muted">Nenhuma ausência registrada para este dia. <a href="{{ url_for('ausencias.lancamento', data=dia.isoformat()) }}">Lançar ausência</a></p>
+{% endfor %}
+{% endblock %}
